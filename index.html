@@ -152,6 +152,72 @@
             opacity: 1;
         }
 
+        /* Permanent clickable location markers with icons */
+        .clickable-marker {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            pointer-events: all;
+            z-index: 10;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clickable-marker img {
+            width: 35px;
+            height: 35px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+            transition: all 0.3s;
+        }
+
+        .clickable-marker::after {
+            content: attr(data-name);
+            position: absolute;
+            top: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #c9a961;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            border: 1px solid #c9a961;
+        }
+
+        .clickable-marker:hover img {
+            width: 36px;
+            height: 36px;
+            filter: drop-shadow(0 0 12px rgba(201, 169, 97, 0.8)) drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+
+        .clickable-marker:hover::after {
+            opacity: 1;
+        }
+
+        .clickable-marker.selected img {
+            width: 45px;
+            height: 45x;
+            filter: drop-shadow(0 0 16px rgba(201, 169, 97, 1)) drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+            animation: selectedPulse 1.5s infinite;
+        }
+
+        @keyframes selectedPulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.15);
+            }
+        }
+
         @keyframes pulse {
             0%, 100% {
                 transform: translate(-50%, -50%) scale(1);
@@ -258,11 +324,20 @@
                     <button onclick="clearAll()">Clear All</button>
                 </div>
                 <div id="sessionButtons"></div>
+                
+                <h2 style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(201, 169, 97, 0.3);">Locations</h2>
+                <div class="session-controls">
+                    <button onclick="clearLocationFilter()">Clear Filter</button>
+                </div>
+                <div id="locationFilter" style="font-size: 0.9em; color: #888; font-style: italic; margin-top: 10px;">
+                    Click a location on the map to filter sessions
+                </div>
             </div>
 
             <div class="map-container">
                 <div class="map-wrapper" id="mapWrapper">
-                    <img src="1770741047446_image.png" alt="Map of Barovia" class="map-image" id="mapImage">
+                    <img src="cleaned_image.png" alt="Map of Barovia" class="map-image" id="mapImage">
+                    <div id="clickableMarkers"></div>
                     <div id="markers"></div>
                 </div>
             </div>
@@ -279,35 +354,40 @@
     </div>
 
     <script>
-        // Location coordinates (percentage of image width/height)
+        // ========================================
+        // LOCATION CONFIGURATION
+        // ========================================
+        // To replace icons: just upload new SVG/PNG files with the same names to the location-icons folder
+        
         const locationCoordinates = {
-            'Abbey of St. Andral': { x: 49, y: 36 },
-            'Abbey of St. Markovia': { x: 15, y: 14 },
-            'Amber Temple': { x: 43, y: 90 },
-            'Argynvostholt': { x: 34, y: 64 },
-            'Berez': { x: 30, y: 77 },
-            'Castle Ravenloft': { x: 82, y: 42 },
-            'Death House': { x: 93, y: 61 },
-            'Gates of Barovia': { x: 62, y: 50 },
-            'Krezk': { x: 16, y: 23 },
-            'Lake Zarovich': { x: 50, y: 31 },
-            'Luna river crossing': { x: 35, y: 81 },
-            'Old Bonegrinder': { x: 51, y: 50 },
-            'Tser Falls Bridge': { x: 67, y: 69 },
-            'Tser Pool': { x: 74, y: 72 },
-            'Tser Pool Vistani Camp': { x: 70, y: 75 },
-            'Tsolenka Pass': { x: 44, y: 97 },
-            'Vallaki': { x: 43, y: 40 },
-            'Vallaki Vistani Camp': { x: 41, y: 45 },
-            'Van Richten\'s Tower': { x: 28, y: 32 },
-            'Village of Barovia': { x: 91, y: 66 },
-            'Eastern Barovian Gate': { x: 96, y: 57 },
-            'Wizard of Wines': { x: 7, y: 53 },
-            'Yester Hill': { x: 7, y: 75 }
+            'Abbey of St. Andral': { x: 49, y: 36, icon: 'abbey' },
+            'Abbey of St. Markovia': { x: 15, y: 14, icon: 'abbey' },
+            'Amber Temple': { x: 43, y: 90, icon: 'temple' },
+            'Argynvostholt': { x: 34, y: 64, icon: 'castle' },
+            'Berez': { x: 30, y: 77, icon: 'village' },
+            'Castle Ravenloft': { x: 82, y: 42, icon: 'castle' },
+            'Death House': { x: 93, y: 61, icon: 'tower' },
+            'Gates of Barovia': { x: 62, y: 50, icon: 'gate' },
+            'Krezk': { x: 16, y: 23, icon: 'village' },
+            'Lake Zarovich': { x: 50, y: 31, icon: 'lake' },
+            'Luna river crossing': { x: 35, y: 81, icon: 'bridge' },
+            'Old Bonegrinder': { x: 51, y: 50, icon: 'windmill' },
+            'Tser Falls Bridge': { x: 67, y: 69, icon: 'bridge' },
+            'Tser Pool': { x: 74, y: 72, icon: 'lake' },
+            'Tser Pool Vistani Camp': { x: 70, y: 75, icon: 'camp' },
+            'Tsolenka Pass': { x: 44, y: 97, icon: 'gate' },
+            'Vallaki': { x: 43, y: 40, icon: 'village' },
+            'Vallaki Vistani Camp': { x: 41, y: 45, icon: 'camp' },
+            'Van Richten\'s Tower': { x: 28, y: 32, icon: 'tower' },
+            'Village of Barovia': { x: 91, y: 66, icon: 'village' },
+            'Eastern Barovian Gate': { x: 96, y: 57, icon: 'gate' },
+            'Wizard of Wines': { x: 7, y: 53, icon: 'winery' },
+            'Yester Hill': { x: 7, y: 75, icon: 'hill' }
         };
 
         let sessionData = [];
         let selectedSessions = new Set();
+        let selectedLocation = null;
 
         // Load CSV data
         async function loadData() {
@@ -373,9 +453,102 @@
                     <div style="font-size: 0.8em; color: #888; margin-top: 4px;">${session.real_date}</div>
                 </button>
             `).join('');
+            
+            // Create permanent clickable location markers
+            createClickableMarkers();
+        }
+
+        function createClickableMarkers() {
+            const container = document.getElementById('clickableMarkers');
+            container.innerHTML = '';
+            
+            Object.entries(locationCoordinates).forEach(([location, data]) => {
+                const marker = document.createElement('div');
+                marker.className = 'clickable-marker';
+                marker.setAttribute('data-name', location);
+                marker.style.left = `${data.x}%`;
+                marker.style.top = `${data.y}%`;
+                marker.onclick = () => filterByLocation(location);
+                
+                // Create icon image
+                const icon = document.createElement('img');
+                icon.src = `location-icons/${data.icon}.svg`;
+                icon.alt = location;
+                icon.onerror = function() {
+                    // Fallback if icon doesn't load
+                    this.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#c9a961"/></svg>');
+                };
+                
+                marker.appendChild(icon);
+                container.appendChild(marker);
+            });
+        }
+
+        function filterByLocation(location) {
+            // If clicking the same location, deselect it
+            if (selectedLocation === location) {
+                selectedLocation = null;
+                clearLocationFilter();
+                return;
+            }
+            
+            selectedLocation = location;
+            selectedSessions.clear();
+            
+            // Find all sessions that mention this location
+            sessionData.forEach(session => {
+                const locations = extractLocations(session.location);
+                if (locations.includes(location)) {
+                    selectedSessions.add(parseInt(session.session_number));
+                }
+            });
+            
+            // Update UI
+            updateLocationFilterDisplay(location);
+            updateClickableMarkerStates();
+            updateUI();
+        }
+
+        function updateLocationFilterDisplay(location) {
+            const filterDiv = document.getElementById('locationFilter');
+            if (location) {
+                const count = selectedSessions.size;
+                filterDiv.innerHTML = `
+                    <strong style="color: #c9a961;">Filtered by: ${location}</strong><br>
+                    <span style="font-size: 0.85em;">${count} session${count !== 1 ? 's' : ''} found</span>
+                `;
+                filterDiv.style.color = '#e4e4e4';
+            } else {
+                filterDiv.innerHTML = 'Click a location on the map to filter sessions';
+                filterDiv.style.color = '#888';
+            }
+        }
+
+        function updateClickableMarkerStates() {
+            document.querySelectorAll('.clickable-marker').forEach(marker => {
+                const location = marker.getAttribute('data-name');
+                if (location === selectedLocation) {
+                    marker.classList.add('selected');
+                } else {
+                    marker.classList.remove('selected');
+                }
+            });
+        }
+
+        function clearLocationFilter() {
+            selectedLocation = null;
+            selectedSessions.clear();
+            updateLocationFilterDisplay(null);
+            updateClickableMarkerStates();
+            updateUI();
         }
 
         function toggleSession(sessionNum) {
+            // If a location filter is active, clear it first
+            if (selectedLocation) {
+                clearLocationFilter();
+            }
+            
             if (selectedSessions.has(sessionNum)) {
                 selectedSessions.delete(sessionNum);
             } else {
@@ -385,13 +558,22 @@
         }
 
         function selectAll() {
+            // Clear location filter if active
+            if (selectedLocation) {
+                clearLocationFilter();
+            }
             sessionData.forEach(s => selectedSessions.add(parseInt(s.session_number)));
             updateUI();
         }
 
         function clearAll() {
             selectedSessions.clear();
-            updateUI();
+            // Also clear location filter
+            if (selectedLocation) {
+                clearLocationFilter();
+            } else {
+                updateUI();
+            }
         }
 
         function updateUI() {
