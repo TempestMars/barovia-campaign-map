@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Zeno Zalik">
+<title>Zeno Zalik</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f5f5;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.1);
+    --border-md: rgba(0,0,0,0.2);
+    --text: #1a1a1a;
+    --muted: #666;
+    --hint: #999;
+    --bg2: #f0f0f0;
+    --bg3: #e8e8e8;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --info-bg: #e8f0fe;
+    --info-text: #1a56cc;
+    --warn-bg: #fff3cd;
+    --warn-text: #856404;
+    --danger-bg: #fde8e8;
+    --danger-text: #b91c1c;
+    --success-bg: #e8f5e9;
+    --success-text: #166534;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1a;
+      --surface: #2a2a2a;
+      --border: rgba(255,255,255,0.1);
+      --border-md: rgba(255,255,255,0.2);
+      --text: #f0f0f0;
+      --muted: #aaa;
+      --hint: #666;
+      --bg2: #333;
+      --bg3: #3a3a3a;
+      --info-bg: #1a2a4a;
+      --info-text: #7aabf0;
+      --warn-bg: #3a2e00;
+      --warn-text: #f0c040;
+      --danger-bg: #3a1a1a;
+      --danger-text: #f07070;
+      --success-bg: #1a3a1a;
+      --success-text: #70c070;
+    }
+  }
+  html, body { background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; color: var(--text); min-height: 100vh; -webkit-tap-highlight-color: transparent; }
+  .sheet { max-width: 430px; margin: 0 auto; padding: 0 0 4rem; }
+  .edit-bar { display: flex; justify-content: flex-end; padding: 0.6rem 1rem 0; }
+  .edit-toggle { background: transparent; border: 0.5px solid var(--border-md); border-radius: var(--radius); padding: 6px 14px; font-size: 13px; color: var(--muted); cursor: pointer; font-family: inherit; }
+  .header { padding: 1rem 1rem 0.75rem; }
+  .header-name { font-size: 24px; font-weight: 600; color: var(--text); }
+  .header-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .section { padding: 0 1rem; margin-bottom: 1.25rem; }
+  .section-label { font-size: 11px; font-weight: 600; color: var(--hint); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; }
+  .stat-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 0.75rem 0.5rem; text-align: center; }
+  .stat-label { font-size: 10px; font-weight: 600; color: var(--hint); letter-spacing: 0.06em; text-transform: uppercase; }
+  .stat-val { font-size: 22px; font-weight: 600; color: var(--text); line-height: 1.2; margin: 2px 0; }
+  .stat-mod { font-size: 12px; color: var(--muted); }
+  .resource-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
+  .resource-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .resource-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .resource-count { font-size: 13px; color: var(--muted); }
+  .pips { display: flex; gap: 5px; flex-wrap: wrap; }
+  .pip { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--border-md); background: var(--bg2); cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
+  .pip.filled { background: var(--text); border-color: var(--text); }
+  .btn { background: transparent; border: 0.5px solid var(--border-md); border-radius: var(--radius); padding: 6px 12px; font-size: 15px; color: var(--text); cursor: pointer; font-family: inherit; min-width: 36px; min-height: 36px; }
+  .btn:active { background: var(--bg2); }
+  .hp-main { font-size: 36px; font-weight: 600; color: var(--text); min-width: 56px; text-align: center; cursor: pointer; line-height: 1; padding: 4px 0; }
+  .hp-row { display: flex; align-items: center; gap: 8px; }
+  .hp-input { width: 64px; border: 0.5px solid var(--border-md); border-radius: var(--radius); padding: 6px 8px; font-size: 18px; text-align: center; color: var(--text); background: var(--bg2); font-family: inherit; min-height: 44px; }
+  .hp-input:focus { outline: 2px solid var(--info-text); outline-offset: 1px; }
+  .dmg-heal { display: flex; gap: 6px; margin-top: 10px; align-items: center; }
+  .dmg-heal input { flex: 1; border: 0.5px solid var(--border-md); border-radius: var(--radius); padding: 8px 10px; font-size: 15px; color: var(--text); background: var(--bg2); font-family: inherit; min-height: 44px; }
+  .dmg-heal input:focus { outline: 2px solid var(--info-text); outline-offset: 1px; }
+  .dmg-btn { padding: 8px 14px; font-size: 14px; border-radius: var(--radius); border: 0.5px solid var(--border-md); cursor: pointer; font-family: inherit; font-weight: 600; min-height: 44px; }
+  .dmg-btn.dmg { background: var(--danger-bg); color: var(--danger-text); }
+  .dmg-btn.heal { background: var(--success-bg); color: var(--success-text); }
+  .edit-field { width: 100%; border: 0.5px solid var(--border-md); border-radius: var(--radius); padding: 8px 10px; font-size: 15px; color: var(--text); background: var(--bg2); font-family: inherit; margin-top: 6px; min-height: 44px; }
+  .edit-field:focus { outline: 2px solid var(--info-text); outline-offset: 1px; }
+  .slots-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .slots-reset { background: transparent; border: 0.5px solid var(--border); border-radius: var(--radius); padding: 5px 12px; font-size: 12px; color: var(--muted); cursor: pointer; font-family: inherit; min-height: 36px; }
+  .slots-reset:active { background: var(--bg2); }
+  .collapsible-btn { width: 100%; display: flex; justify-content: space-between; align-items: center; background: transparent; border: none; cursor: pointer; padding: 0; color: var(--text); font-family: inherit; font-size: 14px; min-height: 36px; }
+  .chevron { font-size: 12px; color: var(--hint); transition: transform 0.2s; display: inline-block; }
+  .chevron.open { transform: rotate(180deg); }
+  .collapsible-content { overflow: hidden; transition: max-height 0.25s ease; }
+  .skill-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .skill-row:last-child { border-bottom: none; }
+  .skill-name { font-size: 15px; color: var(--text); }
+  .skill-sub { font-size: 11px; color: var(--hint); margin-top: 1px; }
+  .skill-bonus { font-size: 16px; font-weight: 600; color: var(--text); }
+  .feature-row { padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .feature-row:last-child { border-bottom: none; }
+  .feature-name { font-size: 15px; font-weight: 600; color: var(--text); }
+  .feature-desc { font-size: 13px; color: var(--muted); margin-top: 3px; line-height: 1.5; }
+  .badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 999px; margin-left: 6px; background: var(--info-bg); color: var(--info-text); font-weight: 600; vertical-align: middle; }
+  .badge.attuned { background: var(--warn-bg); color: var(--warn-text); }
+  .slot-row { display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .slot-row:last-child { border-bottom: none; }
+  .slot-lv { font-size: 12px; font-weight: 600; color: var(--hint); }
+  .slot-lv.feat-lv { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.3; }
+  .slot-lv.feat-lv span { font-size: 10px; color: var(--hint); font-weight: 400; display: block; margin-top: 1px; }
+  .slot-pips { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+  .slot-pip { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--border-md); background: var(--bg2); flex-shrink: 0; }
+  .slot-pip.filled { background: var(--text); border-color: var(--text); }
+  .slot-btns { display: flex; gap: 5px; }
+  .slot-btn { font-size: 12px; padding: 5px 10px; border-radius: var(--radius); border: 0.5px solid var(--border-md); background: transparent; color: var(--muted); cursor: pointer; font-family: inherit; white-space: nowrap; min-height: 36px; }
+  .slot-btn:active { background: var(--bg2); }
+  .slot-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .slot-btn.recover { color: var(--info-text); }
+  .spells-placeholder { margin-top: 8px; padding: 10px 1rem; background: var(--bg2); border-radius: var(--radius); border: 0.5px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="edit-bar">
+    <button class="edit-toggle" onclick="toggleEdit()">Edit</button>
+  </div>
+
+  <div class="header">
+    <div id="name-display" class="header-name">Zeno Zalik</div>
+    <div id="sub-display" class="header-sub">Human Sorcerer · Level 13 · PB +5</div>
+    <div id="name-edit" style="display:none;">
+      <input class="edit-field" id="ef-name" value="Zeno Zalik" placeholder="Name">
+      <input class="edit-field" id="ef-sub" value="Human Sorcerer · Level 13 · PB +5" placeholder="Subheading" style="margin-top:6px;">
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">HP & Resources</div>
+    <div class="resource-card" style="margin-bottom:8px;">
+      <div class="resource-header"><span class="resource-name">Hit Points</span></div>
+      <div class="hp-row">
+        <button class="btn" onclick="adjHP(-1)">−</button>
+        <div id="hp-display" class="hp-main" onclick="startHPEdit()">100</div>
+        <input id="hp-edit-input" class="hp-input" type="number" style="display:none;" onblur="commitHPEdit()" onkeydown="if(event.key==='Enter')this.blur()">
+        <button class="btn" onclick="adjHP(1)">+</button>
+        <span style="font-size:14px;color:var(--muted);margin-left:4px;">/ <span id="hp-max-val">106</span></span>
+      </div>
+      <div class="dmg-heal">
+        <input type="number" id="delta-input" placeholder="amount" min="0" inputmode="numeric">
+        <button class="dmg-btn dmg" onclick="applyDelta(-1)">Damage</button>
+        <button class="dmg-btn heal" onclick="applyDelta(1)">Heal</button>
+      </div>
+      <div id="hp-max-edit" style="display:none;margin-top:8px;">
+        <label style="font-size:12px;color:var(--muted);">Max HP</label>
+        <input class="edit-field" id="ef-hp-max" type="number" value="106" style="width:90px;margin-top:4px;">
+      </div>
+    </div>
+
+    <div class="grid4" style="margin-bottom:8px;">
+      <div class="stat-card">
+        <div class="stat-label">Luck</div>
+        <div class="stat-val" id="luck-val">5</div>
+        <div style="display:flex;gap:3px;justify-content:center;margin-top:6px;">
+          <button class="btn" style="padding:3px 8px;font-size:14px;min-height:32px;" onclick="adj('luck',-1)">−</button>
+          <button class="btn" style="padding:3px 8px;font-size:14px;min-height:32px;" onclick="adj('luck',1)">+</button>
+        </div>
+        <input class="edit-field" id="ef-luck" type="number" value="5" style="display:none;width:64px;margin:6px auto 0;text-align:center;">
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">AC</div>
+        <div class="stat-val" id="ac-val">16</div>
+        <div style="display:flex;gap:3px;justify-content:center;margin-top:6px;">
+          <button class="btn" style="padding:3px 8px;font-size:14px;min-height:32px;" onclick="adj('ac',-1)">−</button>
+          <button class="btn" style="padding:3px 8px;font-size:14px;min-height:32px;" onclick="adj('ac',1)">+</button>
+        </div>
+        <input class="edit-field" id="ef-ac" type="number" value="16" style="display:none;width:64px;margin:6px auto 0;text-align:center;">
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Speed</div>
+        <div class="stat-val" id="spd-val">30</div>
+        <div style="display:flex;gap:3px;justify-content:center;margin-top:6px;">
+          <button class="btn" style="padding:3px 8px;font-size:14px;min-height:32px;" onclick="adj('spd',-1)">−</button>
+          <button class="btn" style="padding:3px 8px;font-size:14px;min-height:32px;" onclick="adj('spd',1)">+</button>
+        </div>
+        <input class="edit-field" id="ef-spd" type="number" value="30" style="display:none;width:64px;margin:6px auto 0;text-align:center;">
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Init</div>
+        <div class="stat-val">+1</div>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-header">
+        <span class="resource-name">Sorcery Points</span>
+        <span class="resource-count" id="sp-count">15 / 15</span>
+      </div>
+      <div class="pips" id="sp-pips"></div>
+      <div id="sp-max-edit" style="display:none;margin-top:10px;">
+        <label style="font-size:12px;color:var(--muted);">Max sorcery points</label>
+        <input class="edit-field" id="ef-sp-max" type="number" value="15" style="width:80px;margin-top:4px;" oninput="rebuildSP()">
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="slots-header">
+      <div class="section-label" style="margin-bottom:0;">Spell Slots</div>
+      <button class="slots-reset" onclick="resetAll()">Long rest</button>
+    </div>
+    <div class="card" style="padding:0.5rem 1rem;">
+      <div id="slots-list"></div>
+    </div>
+    <div class="spells-placeholder">
+      <div style="font-size:12px;color:var(--hint);margin-bottom:3px;">Spells (coming soon)</div>
+      <div style="font-size:13px;color:var(--muted);">Known spells will appear here.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Feature Uses</div>
+    <div class="card" style="padding:0.5rem 1rem;">
+      <div id="feats-list"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Ability Scores</div>
+    <div class="grid2">
+      <div class="stat-card">
+        <div class="stat-label">STR</div><div class="stat-val" id="str-v">8</div><div class="stat-mod" id="str-m">mod −1</div>
+        <input class="edit-field" id="ef-str" type="number" value="8" style="display:none;width:64px;margin:6px auto 0;text-align:center;" oninput="updMod('str')">
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">DEX</div><div class="stat-val" id="dex-v">12</div><div class="stat-mod" id="dex-m">mod +1</div>
+        <input class="edit-field" id="ef-dex" type="number" value="12" style="display:none;width:64px;margin:6px auto 0;text-align:center;" oninput="updMod('dex')">
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">CON</div><div class="stat-val" id="con-v">19</div><div class="stat-mod" id="con-m">mod +4</div>
+        <input class="edit-field" id="ef-con" type="number" value="19" style="display:none;width:64px;margin:6px auto 0;text-align:center;" oninput="updMod('con')">
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">INT</div><div class="stat-val" id="int-v">14</div><div class="stat-mod" id="int-m">mod +2</div>
+        <input class="edit-field" id="ef-int" type="number" value="14" style="display:none;width:64px;margin:6px auto 0;text-align:center;" oninput="updMod('int')">
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">WIS</div><div class="stat-val" id="wis-v">8</div><div class="stat-mod" id="wis-m">mod −1</div>
+        <input class="edit-field" id="ef-wis" type="number" value="8" style="display:none;width:64px;margin:6px auto 0;text-align:center;" oninput="updMod('wis')">
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">CHA</div><div class="stat-val" id="cha-v">20</div><div class="stat-mod" id="cha-m">mod +5</div>
+        <input class="edit-field" id="ef-cha" type="number" value="20" style="display:none;width:64px;margin:6px auto 0;text-align:center;" oninput="updMod('cha')">
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <button class="collapsible-btn" onclick="toggleSection('skills')">
+      <span class="section-label" style="margin-bottom:0;">Skills</span>
+      <span class="chevron" id="chev-skills">▼</span>
+    </button>
+    <div class="collapsible-content" id="sec-skills" style="max-height:0px;">
+      <div style="height:8px;"></div>
+      <div class="card">
+        <div class="skill-row"><div><div class="skill-name">Persuasion</div><div class="skill-sub">CHA · PB +5</div></div><div class="skill-bonus">+10</div></div>
+        <div class="skill-row"><div><div class="skill-name">Deception</div><div class="skill-sub">CHA · PB +5</div></div><div class="skill-bonus">+10</div></div>
+        <div class="skill-row"><div><div class="skill-name">History</div><div class="skill-sub">INT · PB +5</div></div><div class="skill-bonus">+7</div></div>
+        <div class="skill-row"><div><div class="skill-name">Religion</div><div class="skill-sub">INT · PB +5</div></div><div class="skill-bonus">+7</div></div>
+        <div class="skill-row"><div><div class="skill-name">Arcana</div><div class="skill-sub">INT · PB +5</div></div><div class="skill-bonus">+7</div></div>
+        <div class="skill-row"><div><div class="skill-name">Cooking Utensils</div><div class="skill-sub">PB +5</div></div><div class="skill-bonus">+6</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <button class="collapsible-btn" onclick="toggleSection('features')">
+      <span class="section-label" style="margin-bottom:0;">Features & Traits</span>
+      <span class="chevron" id="chev-features">▼</span>
+    </button>
+    <div class="collapsible-content" id="sec-features" style="max-height:0px;">
+      <div style="height:8px;"></div>
+      <div class="card">
+        <div class="feature-row"><div class="feature-name">Metamagic Adept</div><div class="feature-desc">+2 sorcery points, +2 metamagics</div></div>
+        <div class="feature-row"><div class="feature-name">Metamagics</div><div class="feature-desc">Quickened Spell (2sp) · Twinned Spell (level sp) · Careful Spell (1sp) · Distant Spell (1sp)</div></div>
+        <div class="feature-row"><div class="feature-name">Fey Touched <span class="badge">feat</span></div><div class="feature-desc">Grants Misty Step · 1/long rest free</div></div>
+        <div class="feature-row"><div class="feature-name">Restore Balance</div><div class="feature-desc">Reaction · 60 ft · 5×/long rest · negate advantage or disadvantage</div></div>
+        <div class="feature-row"><div class="feature-name">Bastion of Law</div><div class="feature-desc">Action · Spend 1–5 sorcery points · each reduces 1d8 damage</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <button class="collapsible-btn" onclick="toggleSection('items')">
+      <span class="section-label" style="margin-bottom:0;">Magic Items</span>
+      <span class="chevron" id="chev-items">▼</span>
+    </button>
+    <div class="collapsible-content" id="sec-items" style="max-height:0px;">
+      <div style="height:8px;"></div>
+      <div class="card">
+        <div class="feature-row"><div class="feature-name">Amulet of Health <span class="badge attuned">Attuned</span></div><div class="feature-desc">CON set to 19</div></div>
+        <div class="feature-row"><div class="feature-name">Animated Shield <span class="badge attuned">Attuned</span></div><div class="feature-desc">Bonus action to activate · +2 AC for 1 minute</div></div>
+        <div class="feature-row"><div class="feature-name">Ring of Warmth <span class="badge attuned">Attuned</span></div><div class="feature-desc">Resistance to cold damage · unaffected by cold weather</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SLOT_CONFIG = [
+  {level:1,max:4},{level:2,max:3},{level:3,max:3},
+  {level:4,max:3},{level:5,max:2},{level:6,max:1},{level:7,max:1}
+];
+const ORDINALS = ['1st','2nd','3rd','4th','5th','6th','7th'];
+const STATS = ['str','dex','con','int','wis','cha'];
+const FEAT_CONFIG = [
+  {key:'mistyStep',    name:'Misty Step',      sub:'Fey Touched · long rest', max:1},
+  {key:'restoreBalance', name:'Restore Balance', sub:'Reaction · 60 ft · long rest', max:5},
+];
+
+const DEFAULTS = {
+  hp:100, hpMax:106, luck:5, ac:16, spd:30,
+  spCur:15, spMax:15,
+  slots: SLOT_CONFIG.map(s=>({level:s.level,max:s.max,cur:s.max})),
+  feats: {mistyStep:1, restoreBalance:5},
+  editMode:false,
+  sections:{skills:false,features:false,items:false}
+};
+
+let state = JSON.parse(JSON.stringify(DEFAULTS));
+
+function save() { try { localStorage.setItem('zenoZalik', JSON.stringify(state)); } catch(e){} }
+function load() {
+  try {
+    const d = localStorage.getItem('zenoZalik');
+    if (d) {
+      const p = JSON.parse(d);
+      state = {...DEFAULTS, ...p};
+      if (!state.feats) state.feats = DEFAULTS.feats;
+      if (!state.sections) state.sections = DEFAULTS.sections;
+      if (!state.slots || state.slots.length !== 7) state.slots = DEFAULTS.slots;
+    }
+  } catch(e) {}
+}
+load();
+
+function render() {
+  document.getElementById('hp-display').textContent = state.hp;
+  document.getElementById('hp-max-val').textContent = state.hpMax;
+  document.getElementById('luck-val').textContent = state.luck;
+  document.getElementById('ac-val').textContent = state.ac;
+  document.getElementById('spd-val').textContent = state.spd;
+  renderSP(); renderSlots(); renderFeats();
+}
+
+function renderSP() {
+  document.getElementById('sp-count').textContent = state.spCur + ' / ' + state.spMax;
+  const pips = document.getElementById('sp-pips');
+  pips.innerHTML = '';
+  for (let i = 0; i < state.spMax; i++) {
+    const p = document.createElement('div');
+    p.className = 'pip' + (i < state.spCur ? ' filled' : '');
+    const idx = i;
+    p.addEventListener('click', () => { state.spCur = (idx < state.spCur) ? idx : idx+1; save(); renderSP(); });
+    pips.appendChild(p);
+  }
+}
+
+function rebuildSP() {
+  const v = parseInt(document.getElementById('ef-sp-max').value) || 15;
+  state.spMax = v;
+  if (state.spCur > v) state.spCur = v;
+  save(); renderSP();
+}
+
+function renderSlots() {
+  const list = document.getElementById('slots-list');
+  list.innerHTML = '';
+  state.slots.forEach((slot, i) => {
+    const row = document.createElement('div');
+    row.className = 'slot-row';
+
+    const lv = document.createElement('div');
+    lv.className = 'slot-lv';
+    lv.textContent = ORDINALS[i];
+
+    const pipWrap = document.createElement('div');
+    pipWrap.className = 'slot-pips';
+    for (let j = 0; j < slot.max; j++) {
+      const p = document.createElement('div');
+      p.className = 'slot-pip' + (j < slot.cur ? ' filled' : '');
+      pipWrap.appendChild(p);
+    }
+
+    const btns = document.createElement('div');
+    btns.className = 'slot-btns';
+
+    const useBtn = document.createElement('button');
+    useBtn.className = 'slot-btn';
+    useBtn.textContent = 'Use';
+    useBtn.disabled = slot.cur === 0;
+    useBtn.addEventListener('click', () => { if (slot.cur > 0) { slot.cur--; save(); renderSlots(); } });
+
+    const recBtn = document.createElement('button');
+    recBtn.className = 'slot-btn recover';
+    recBtn.textContent = 'Recover';
+    recBtn.disabled = slot.cur >= slot.max;
+    recBtn.addEventListener('click', () => { if (slot.cur < slot.max) { slot.cur++; save(); renderSlots(); } });
+
+    btns.appendChild(useBtn);
+    btns.appendChild(recBtn);
+    row.appendChild(lv);
+    row.appendChild(pipWrap);
+    row.appendChild(btns);
+    list.appendChild(row);
+  });
+}
+
+function renderFeats() {
+  const list = document.getElementById('feats-list');
+  list.innerHTML = '';
+  FEAT_CONFIG.forEach((feat, i) => {
+    const cur = state.feats[feat.key] !== undefined ? state.feats[feat.key] : feat.max;
+    const row = document.createElement('div');
+    row.className = 'slot-row';
+    if (i === FEAT_CONFIG.length - 1) row.style.borderBottom = 'none';
+
+    const lv = document.createElement('div');
+    lv.className = 'slot-lv feat-lv';
+    lv.innerHTML = feat.name + '<span>' + feat.sub + '</span>';
+
+    const pipWrap = document.createElement('div');
+    pipWrap.className = 'slot-pips';
+    for (let j = 0; j < feat.max; j++) {
+      const p = document.createElement('div');
+      p.className = 'slot-pip' + (j < cur ? ' filled' : '');
+      pipWrap.appendChild(p);
+    }
+
+    const btns = document.createElement('div');
+    btns.className = 'slot-btns';
+
+    const useBtn = document.createElement('button');
+    useBtn.className = 'slot-btn';
+    useBtn.textContent = 'Use';
+    useBtn.disabled = cur === 0;
+    useBtn.addEventListener('click', () => { if (state.feats[feat.key] > 0) { state.feats[feat.key]--; save(); renderFeats(); } });
+
+    const recBtn = document.createElement('button');
+    recBtn.className = 'slot-btn recover';
+    recBtn.textContent = 'Recover';
+    recBtn.disabled = cur >= feat.max;
+    recBtn.addEventListener('click', () => { if (state.feats[feat.key] < feat.max) { state.feats[feat.key]++; save(); renderFeats(); } });
+
+    btns.appendChild(useBtn);
+    btns.appendChild(recBtn);
+    row.appendChild(lv);
+    row.appendChild(pipWrap);
+    row.appendChild(btns);
+    list.appendChild(row);
+  });
+}
+
+function resetAll() {
+  if (!confirm('Long rest — reset all slots, sorcery points, and feature uses?')) return;
+  state.slots = SLOT_CONFIG.map(s=>({level:s.level,max:s.max,cur:s.max}));
+  state.spCur = state.spMax;
+  FEAT_CONFIG.forEach(f => { state.feats[f.key] = f.max; });
+  save(); render();
+}
+
+function adjHP(d) { state.hp = Math.max(0, Math.min(state.hpMax, state.hp + d)); save(); render(); }
+function adj(key, d) { state[key] = (state[key]||0) + d; save(); render(); }
+
+function startHPEdit() {
+  document.getElementById('hp-display').style.display = 'none';
+  const inp = document.getElementById('hp-edit-input');
+  inp.style.display = 'block'; inp.value = state.hp; inp.focus(); inp.select();
+}
+function commitHPEdit() {
+  const v = parseInt(document.getElementById('hp-edit-input').value);
+  if (!isNaN(v)) state.hp = Math.max(0, Math.min(state.hpMax, v));
+  document.getElementById('hp-edit-input').style.display = 'none';
+  document.getElementById('hp-display').style.display = 'block';
+  save(); render();
+}
+function applyDelta(sign) {
+  const inp = document.getElementById('delta-input');
+  const v = parseInt(inp.value);
+  if (!isNaN(v) && v > 0) {
+    state.hp = Math.max(0, Math.min(state.hpMax, state.hp + sign * v));
+    inp.value = ''; save(); render();
+  }
+}
+
+function getMod(v) { return Math.floor((v-10)/2); }
+function fmtMod(m) { return (m>=0?'mod +':'mod ') + m; }
+function updMod(stat) {
+  const v = parseInt(document.getElementById('ef-'+stat).value) || 10;
+  document.getElementById(stat+'-v').textContent = v;
+  document.getElementById(stat+'-m').textContent = fmtMod(getMod(v));
+}
+
+function toggleEdit() {
+  state.editMode = !state.editMode;
+  document.querySelector('.edit-toggle').textContent = state.editMode ? 'Done' : 'Edit';
+  ['name-edit','hp-max-edit','sp-max-edit'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.style.display = state.editMode ? 'block' : 'none';
+  });
+  document.getElementById('name-display').style.display = state.editMode ? 'none' : 'block';
+  ['luck','ac','spd'].forEach(k => { document.getElementById('ef-'+k).style.display = state.editMode ? 'block' : 'none'; });
+  STATS.forEach(s => { document.getElementById('ef-'+s).style.display = state.editMode ? 'block' : 'none'; });
+  if (!state.editMode) {
+    const nm = document.getElementById('ef-name').value.trim();
+    const sb = document.getElementById('ef-sub').value.trim();
+    if (nm) document.getElementById('name-display').textContent = nm;
+    if (sb) document.getElementById('sub-display').textContent = sb;
+    const hpMax = parseInt(document.getElementById('ef-hp-max').value);
+    if (!isNaN(hpMax)) state.hpMax = hpMax;
+    ['luck','ac','spd'].forEach(k => {
+      const v = parseInt(document.getElementById('ef-'+k).value);
+      if (!isNaN(v)) state[k] = v;
+    });
+    STATS.forEach(s => {
+      const v = parseInt(document.getElementById('ef-'+s).value) || 10;
+      document.getElementById(s+'-v').textContent = v;
+      document.getElementById(s+'-m').textContent = fmtMod(getMod(v));
+    });
+    save(); render();
+  }
+}
+
+function toggleSection(key) {
+  state.sections[key] = !state.sections[key];
+  const sec = document.getElementById('sec-'+key);
+  const chev = document.getElementById('chev-'+key);
+  if (state.sections[key]) { sec.style.maxHeight = sec.scrollHeight + 600 + 'px'; chev.classList.add('open'); }
+  else { sec.style.maxHeight = '0px'; chev.classList.remove('open'); }
+}
+
+render();
+</script>
+</body>
+</html>
